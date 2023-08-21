@@ -1,7 +1,7 @@
 github-scraper
 =====================
 
-Write a RESTful API which uses the GITHUB scraper behind the scenes to sample projects and return results about language features.
+Write a RESTful API which uses the GitHub scraper behind the scenes to sample projects and return results about language features.
 
 Contact
 -------
