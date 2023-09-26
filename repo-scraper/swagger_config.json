@@ -1,0 +1,425 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Repo Scraper API",
+        "description": "Restful API for the `codesurvey` Python library.\nAllows clients to search git repositories for certain features and return a summary of the usage of the features within those repositories. For more about `codesurvey`, visit the [repository](https://github.com/when-of-python/codesurvey) on GitHub.",
+        "version": "0.1.0",
+        "contact": {
+            "email": "elliot@p-s.co.nz"
+        },
+        "license": {
+            "name": "GNU AGPL",
+            "url": "https://www.gnu.org/licenses/agpl-3.0.html"
+        }
+    },
+    "tags": [
+        {
+            "name": "search",
+            "description": "Search functionality"
+        }
+    ],
+    "components": {
+        "schemas": {
+            "search": {
+                "type": "object",
+                "description": "A collection of sources and analyzers used to perform a repository search.",
+                "properties": {
+                    "sources": {
+                        "type": "array",
+                        "description": "Every source within the repository search, consisting of samples from GitHub and also explicit collections of repositories.",
+                        "items": {
+                            "anyOf": [
+                                {"$ref": "#/components/schemas/github-sample-source"},
+                                {"$ref": "#/components/schemas/git-source"}
+                            ]
+                        }
+                    },
+                    "analyzers": {
+                        "type": "array",
+                        "description": "A collection of analyzers, each applying to a source to search for particular features and modules.",
+                        "items": {
+                            "$ref": "#/components/schemas/analyzer"
+                        }
+                    }
+                }
+            },
+            "github-sample-source": {
+                "type": "object",
+                "description": "A sample of repositories from GitHub under a particular language.",
+                "properties": {
+                    "language": {
+                        "type": "string",
+                        "description": "The name of a programming/scripting language as [recognized](https://github.com/github-linguist/linguist/blob/master/lib/linguist/languages.yml) by GitHub. Only `python` is presently supported.",
+                        "default": "python"
+                    }
+                },
+                "example": {
+                    "language": "python"
+                }
+            },
+            "git-source": {
+                "type": "object",
+                "description": "One or more repositories within which to assess features.",
+                "properties": {
+                    "repositories": {
+                        "type": "array",
+                        "description": "A collection of repositories' URLs.",
+                        "items": {
+                            "type": "string",
+                            "description": "A particular git repository URL."
+                        },
+                        "example": ["https://github.com/flasgger/flasgger.git"]
+                    }
+                }
+            },
+            "analyzer": {
+                "type": "object",
+                "description": "A collection of features and modules for which to search within the provided sources.",
+                "properties": {
+                    "features": {
+                        "type": "array",
+                        "description": "The name of each feature for which to be searched.",
+                        "items": {
+                            "type": "string",
+                            "description": "A syntactic feature particular to the language.",
+                            "enum": [
+                                "for-else",
+                                "try-finally",
+                                "has-type-hint",
+                                "set-function",
+                                "set-value",
+                                "set",
+                                "fstring",
+                                "ternary",
+                                "pattern-matching",
+                                "walrus"
+                            ]
+                        }
+                    },
+                    "modules": {
+                        "type": "array",
+                        "description": "The name of each module for which to be searched.",
+                        "items": {
+                            "type": "string",
+                            "description": "The name of a module for which to be searched within the sources.",
+                            "example": "dataclasses"
+                        }
+                    }
+                }
+            },
+            "search-results": {
+                "type": "object",
+                "description": "The complete results from a feature/module search across provided sources.",
+                "properties": {
+                    "repo-features": {
+                        "type": "array",
+                        "description": "An assessment of the frequency of features/modules within particular repositories.",
+                        "items": {
+                            "$ref": "#/components/schemas/repo-feature"
+                        }
+                    },
+                    "code-features": {
+                        "type": "array",
+                        "description": "An assessment of the frequency of features/modules within particular files.",
+                        "items": {
+                            "$ref": "#/components/schemas/code-feature"
+                        }
+                    },
+                    "survey-tree": {
+                        "$ref": "#/components/schemas/survey-tree"
+                    }
+                }
+            },
+            "repo-feature": {
+                "type": "object",
+                "description": "An overview of the features found in the provided source repositories.",
+                "properties": {
+                    "updated": {
+                        "type": "string",
+                        "description": "The time when the repository was last updated.",
+                        "example": "2023-09-23 03:52:40.531691"
+                    },
+                    "source_name": {
+                        "type": "string",
+                        "description": "The identifier for the repository.",
+                        "example": "3UpCZc9Zw23YvA7GdGFmXB"
+                    },
+                    "repo_key": {
+                        "type": "string",
+                        "description": "The remote repository URL.",
+                        "example": "https://github.com/someone/something.git"
+                    },
+                    "analyzer_name": {
+                        "type": "string",
+                        "description": "The identifier for the analyzer containing the assessed feature.",
+                        "example": "64hVtER29aEbWDL68SYkQt"
+                    },
+                    "feature_name": {
+                        "type": "string",
+                        "description": "The name of the feature being assessed.",
+                        "example": "fstring"
+                    },
+                    "occurrence_count": {
+                        "type": "integer",
+                        "description": "The number of occurrences of the feature in the repository.",
+                        "example": 2
+                    },
+                    "code_occurrence_count": {
+                        "type": "integer",
+                        "description": "Number of files (using the searched language) within the repository containing this feature.",
+                        "example": 10
+                    },
+                    "code_total_count": {
+                        "type": "integer",
+                        "description": "Number of files (using the searched language) within the repository.",
+                        "example": 12
+                    },
+                    "repo_metadata": {
+                        "type": "object",
+                        "description": "Additional features of interest relating to the repository.",
+                        "additionalProperties": {
+                            "type": "object",
+                            "stars": {
+                                "type": "integer",
+                                "description": "The number of user accounts that have applied a GitHub star to the repository.",
+                                "example": 528
+                            }
+                        }
+                    }
+                }
+            },
+            "code-feature": {
+                "type": "object",
+                "description": "A feature found in the individual files (which matching language type) of the provided source repositories.",
+                "properties": {
+                    "updated": {
+                        "type": "string",
+                        "description": "The time when the file within the repository was last updated.",
+                        "example": "2023-01-30 04:56:14.251695"
+                    },
+                    "source_name": {
+                        "type": "string",
+                        "description": "The identifier for the source.",
+                        "example": "3UpCZc9Zw23YvA7GdGFmXB"
+                    },
+                    "repo_key": {
+                        "type": "string",
+                        "description": "The identifier for the repository within the source.",
+                        "example": "https://github.com/someone/something.git"
+                    },
+                    "analyzer_name": {
+                        "type": "string",
+                        "description": "The identifier for the analyzer containing the assessed feature/module.",
+                        "example": "64hVtER29aEbWDL68SYkQt"
+                    },
+                    "code_key": {
+                        "type": "string",
+                        "description": "The module being assessed for instances of the assessed feature/module.",
+                        "example": "something/main.py"
+                    },
+                    "feature_name": {
+                        "type": "string",
+                        "description": "The name of the feature/module being assessed.",
+                        "example": "fstring"
+                    },
+                    "occurrence_count": {
+                        "type": "integer",
+                        "description": "The number of times the feature/module appears within the file.",
+                        "example": 1
+                    },
+                    "occurrences": {
+                        "type": "array",
+                        "description": "The instances where the feature/module has appeared within the file.",
+                        "items": {
+                            "type": "object",
+                            "description": "A single instance where the feature/module has appeared within the file.",
+                            "properties": {
+                                "first_line_number": {
+                                    "type": "integer",
+                                    "description": "The first line of the code where a particular instance of a feature/module is found.",
+                                    "example": 63
+                                }
+                            }
+                        }
+                    },
+                    "repo_metadata": {
+                        "type": "object",
+                        "description": "Additional features of interest relating to the repository.",
+                        "properties": {
+                            "stars": {
+                                "type": "integer",
+                                "description": "The number of user accounts that have applied a GitHub star to the repository.",
+                                "example": 528
+                            }
+                        }
+                    }
+                }
+            },
+            "survey-tree": {
+                "type": "object",
+                "description": "A complete overview of the results from the search.",
+                "properties": {
+                    "sources": {
+                        "type": "object",
+                        "description": "An overview of each single source that was assessed from the search.",
+                        "additionalProperties": {
+                            "type": "object",
+                            "description": "An overview of a single source that was assessed from the search.",
+                            "properties": {
+                                "repos": {
+                                    "type": "object",
+                                    "description": "An overview of each repository that was assessed from the source.",
+                                    "additionalProperties": {
+                                        "type": "string",
+                                        "description": "An overview of a single repository that was assessed from the source.",
+                                        "properties": {
+                                            "analyzers": {
+                                                "type": "object",
+                                                "description": "An overview of each single analyzer that was applied to a repository.",
+                                                "additionalProperties": {
+                                                    "type": "object",
+                                                    "description": "An overview of a single analyzer that was applied to a repository.",
+                                                    "properties": {
+                                                        "codes": {
+                                                            "type": "object",
+                                                            "description": "An overview of each single file assessed by an analyzer in a repository.",
+                                                            "additionalProperties": {
+                                                                "type": "object",
+                                                                "description": "An overview of a single file assessed by an analyzer in a repository.",
+                                                                "properties": {
+                                                                    "features": {
+                                                                        "type": "object",
+                                                                        "description": "An overview of each single feature/module's occurrence within a single file assessed by an analyzer.",
+                                                                        "properties": {
+                                                                            "updated": {
+                                                                                "type": "string",
+                                                                                "description": "The time when the file was last updated.",
+                                                                                "example": "2023-09-23 03:52:40.531691"
+                                                                            },
+                                                                            "occurrence_count": {
+                                                                                "type": "integer",
+                                                                                "description": "The number of times the feature/module appears within the file.",
+                                                                                "example": 1
+                                                                            },
+                                                                            "occurrences": {
+                                                                                "type": "array",
+                                                                                "description": "The instances where the feature/module has appeared within the file.",
+                                                                                "items": {
+                                                                                    "type": "object",
+                                                                                    "description": "A single instance where the feature/module has appeared within the file.",
+                                                                                    "properties": {
+                                                                                        "first_line_number": {
+                                                                                            "type": "integer",
+                                                                                            "description": "The first line of the code where a particular instance of a feature/module is found.",
+                                                                                            "example": 63
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        "features": {
+                                                            "type": "object",
+                                                            "description": "An overview of each single feature in a repository.",
+                                                            "additionalProperties": {
+                                                                "type": "object",
+                                                                "description": "An overview of a single feature in a repository.",
+                                                                "properties": {
+                                                                    "updated": {
+                                                                        "type": "string",
+                                                                        "description": "The time when the repository was last updated.",
+                                                                        "example": "2023-09-23 03:52:40.531691"
+                                                                    },
+                                                                    "occurrence_count": {
+                                                                        "type": "integer",
+                                                                        "description": "The number of occurrences of the feature in the repository.",
+                                                                        "example": 1
+                                                                    },
+                                                                    "code_occurrence_count": {
+                                                                        "type": "integer",
+                                                                        "description": "The number of files containing the feature in the repository.",
+                                                                        "example": 1
+                                                                    },
+                                                                    "code_total_count": {
+                                                                        "type": "integer",
+                                                                        "description": "The number of files assessed within the repository.",
+                                                                        "example": 10
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "repo_metadata": {
+                                                "type": "object",
+                                                "description": "Additional features of interest relating to the repository.",
+                                                "properties": {
+                                                    "stars": {
+                                                        "type": "integer",
+                                                        "description": "The number of user accounts that have applied a GitHub star to the repository."
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "example": {
+                            "3UpCZc9Zw23YvA7GdGFmXB": {
+                                "repos": {
+                                    "https://github.com/flasgger/flasgger.git": {
+                                        "analyzers": {
+                                            "64hVtER29aEbWDL68SYkQt": {
+                                                "codes": {
+                                                    "home/admin.py": {
+                                                        "features": {
+                                                            "dataclasses": {
+                                                                "updated": "2023-09-23 03:52:40.531691",
+                                                                "occurrence_count": 1,
+                                                                "occurrences": [
+                                                                    {
+                                                                        "first_line_number": 63
+                                                                    }
+                                                                ]
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "features": {
+                                                    "dataclasses": {
+                                                        "updated": "2023-09-23 03:52:40.531691",
+                                                        "occurrence_count": 18,
+                                                        "code_occurrence_count": 1,
+                                                        "code_total_count": 3
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "repo_metadata": {
+                                            "stars": 528
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "error-message": {
+                "type": "object",
+                "properties": {
+                    "error-message": {
+                        "type": "string",
+                        "description": "Parameters were missing or faulty.",
+                        "example": "No analyzers provided."
+                    }
+                }
+            }
+        }
+    }
+}
