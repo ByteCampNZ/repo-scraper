@@ -1,44 +1,24 @@
 import json
-from typing import Callable, Dict, List, Tuple, Union
-import sys
+from typing import Dict, List, Tuple, Union
 
 from flask import Flask, request
 from flask_restful import Api, Resource
 from flasgger import Swagger
-from codesurvey import CodeSurvey
-from codesurvey.sources import GithubSampleSource, GitSource
-from codesurvey.analyzers.python import PythonAstAnalyzer
-from codesurvey.analyzers.python.features import (
-    py_module_feature_finder, has_for_else, has_try_finally, has_type_hint, has_set_function,
-    has_set_value, has_set, has_fstring, has_ternary, has_pattern_matching, has_walrus
-)
-
-from utils import create_response, SearchNames
-
-__version__: str = '0.1.0'
 
 
-param_to_feature: Dict[str, Callable[[], str]] = {
-    'for-else': has_for_else,
-    'try-finally': has_try_finally,
-    'has-type-hint': has_type_hint,
-    'set-function': has_set_function,
-    'set-value': has_set_value,
-    'set': has_set,
-    'fstring': has_fstring,
-    'ternary': has_ternary,
-    'pattern-matching': has_pattern_matching,
-    'walrus': has_walrus
-}
+from utils import create_response, get_analyzers, get_sources, run_search, SearchNames
 
+__version__: str = '0.1.1'
 
-# Initializes the application programming interface.
+# Initializes and configures the application.
 app: Flask = Flask(__name__)
 with open("repo-scraper/swagger_config.json") as f:
     app.config['SWAGGER'] = json.load(f)
 
+# Matches the API documented version to the package version.
 app.config['SWAGGER']['info']['version'] = __version__
 
+# Initializes the application programming interface and documentation.
 api: Api = Api(app)
 swagger: Swagger = Swagger(app)
 
@@ -107,80 +87,17 @@ class Search(Resource):
             return {'error-message': 'No analyzers provided.'}, 422
 
         # Prepares to collect all sources, analyzers, and names.
-        sources = []
-        analyzers = []
         search_names = SearchNames()
 
-        # Prepares to collect all the names of every feature.
-        feature_names = []
+        # Constructs all the sources and analyzers for the search.
+        try:
+            sources = get_sources(body['sources'], search_names)
+            analyzers = get_analyzers(body['analyzers'], search_names)
+        except ValueError as e:
+            return {'error-message': str(e)}, 422
 
-        # Adds each of the sources.
-        for source in body['sources']:
-            if sorted(source) == ['language']:
-                sources.append(GithubSampleSource(
-                    language=source['language'], name=search_names.generate_source_name()
-                ))
-            elif sorted(source) == ['repositories']:
-                sources.append(GitSource(
-                    source['repositories'], name=search_names.generate_source_name()
-                ))
-            else:
-                return {'error-message': f'Unrecognized source: {source}.'}, 422
-
-        # Adds every feature listed amongst the arguments to the search
-        # features, and returns an error if a requested source is
-        # unrecognized.
-        for analyzer in body['analyzers']:
-            # Prepares to find the names of every feature in the
-            # analyzer.
-            feature_finders = []
-
-            # Adds each of the features to the analyzer.
-            for feature in analyzer['features']:
-                if feature in param_to_feature:
-                    feature_finders.append(param_to_feature[feature])
-                    feature_names.append(feature)
-                else:
-                    return {
-                        'error-message': 'Unrecognized feature',
-                        'feature-name': feature
-                    }, 422
-
-            # Adds each of the modules to the analyzer.
-            if analyzer['modules']:
-                feature_names.append(','.join(analyzer['modules']))
-                feature_finders.append(py_module_feature_finder(
-                    name=feature_names[-1], modules=analyzer['modules']
-                ))
-
-            # Creates an analyzer from the provided features and modules
-            analyzers.append(PythonAstAnalyzer(
-                feature_finders=feature_finders, name=search_names.generate_analyzer_name()
-            ))
-
-        # Creates a CodeSurvey object and runs the search.
-        survey = CodeSurvey(
-            db_filepath=sys.argv[1],
-            sources=sources,
-            analyzers=analyzers,
-            max_workers=3,
-            use_saved_features=False
-        )
-        survey.run(max_repos=4, disable_progress=True)
-
-        # Defines the filtering to be performed on the database.
-        db_filter = {
-            'source_names': search_names.source_names,
-            'analyzer_names': search_names.analyzer_names,
-            'feature_names': feature_names
-        }
-
-        # Returns the output from the search.
-        return {
-            'repo-features': survey.get_repo_features(**db_filter),
-            'code-features': survey.get_code_features(**db_filter),
-            'survey-tree': survey.get_survey_tree(**db_filter)
-        }, 200
+        # Runs the search and returns the output.
+        return run_search(sources=sources, analyzers=analyzers, search_names=search_names), 422
 
 
 # Binds the search resource to the /search path.
