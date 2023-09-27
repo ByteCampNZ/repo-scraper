@@ -1,9 +1,9 @@
 RepoScraper
 ============
 
-Write a RESTful API which uses the GitHub scraper behind the scenes to
-sample projects and return results about language features. Uses OpenAPI
-3.0 for documentation.
+Write a REST API which uses the Python package ``codesurvey`` behind the
+scenes to sample git repositories and return results about language
+features. Uses OpenAPI 3.0 for documentation.
 
 Running
 -------

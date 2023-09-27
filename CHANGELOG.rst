@@ -16,6 +16,7 @@ Changed
 =======
 
 * Ignoring the __pycache__ folder in ``.gitignore``.
+* Improving the README to be more specific.
 
 ******
 v0.1.0
