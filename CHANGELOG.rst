@@ -3,7 +3,7 @@ Change Log
 ##########
 
 ******
-Unreleased
+v0.1.1
 ******
 
 Added
@@ -17,6 +17,7 @@ Changed
 
 * Ignoring the __pycache__ folder in ``.gitignore``.
 * Improving the README to be more specific.
+* Upgrading required packages ``codesurvey`` and ``flask``.
 
 ******
 v0.1.0
