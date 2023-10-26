@@ -3,6 +3,20 @@ Change Log
 ##########
 
 ******
+v0.1.2
+******
+
+Changed
+=======
+
+* Restructuring project into a package.
+* Introducing parameter ``db_path`` to script
+* Changing ``README.rst`` to remove TODO-style phrasing.
+* Removed version from ``swagger_config.json`` as it is already set dynamically by ``main.py``.
+* Moved the ``requirements.txt`` out of the application folder and into the project folder.
+* Obtaining API version from the package version.
+
+******
 v0.1.1
 ******
 

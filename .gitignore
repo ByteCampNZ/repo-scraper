@@ -3,3 +3,9 @@
 
 # Cache folders
 **/__pycache__/
+
+# Distribution folder
+dist/
+
+# Egg folder
+src/repo_scraper.egg-info

@@ -1,8 +1,8 @@
 from dataclasses import asdict, is_dataclass
 import datetime
 import json
-import sys
-from typing import Any, Callable, Dict, List, Union
+from pathlib import Path
+from typing import Any, Callable, Dict, List
 
 from codesurvey import CodeSurvey
 from codesurvey.sources import GithubSampleSource, GitSource
@@ -33,7 +33,6 @@ param_to_feature: Dict[str, Callable[[], str]] = {
 class SearchNames:
     """Keeps a record of the names used for sources, features, and
     analyzers during a search.
-
     """
     def __init__(self) -> None:
         self.source_names: List[str] = []
@@ -45,7 +44,6 @@ class SearchNames:
 
         Returns:
             The generated and stored UUID.
-
         """
         uuid = shortuuid.uuid()
         self.source_names.append(uuid)
@@ -56,7 +54,6 @@ class SearchNames:
 
         Returns:
             The generated and stored UUID.
-
         """
         uuid = shortuuid.uuid()
         self.analyzer_names.append(uuid)
@@ -67,7 +64,6 @@ class SearchNames:
 
         Args:
             name: The name of the feature/module.
-
         """
         self.feature_names.append(name)
 
@@ -75,9 +71,8 @@ class SearchNames:
 class ExtendedEncoder(json.JSONEncoder):
     """Extended JSON serializer, allowing for dates, datetimes, and
     dataclasses.
-
     """
-    def default(self, obj: Any) -> Union[str, int, List, Dict]:
+    def default(self, obj: Any) -> str | int | List | Dict:
         """Returns the serialized form of the object.
 
         Args:
@@ -108,7 +103,6 @@ def create_response(data: Any, code: int, headers=None) -> Response:
 
     Returns:
         The response from the provided constituent parts.
-
     """
     dumped = json.dumps(data, cls=ExtendedEncoder)
     resp = make_response(dumped, code)
@@ -132,7 +126,6 @@ def get_sources(
 
     Returns:
         A list of Source objects.
-
     """
     # Prepares a list of Source objects.
     sources = []
@@ -169,7 +162,6 @@ def get_analyzers(
 
     Returns:
         A list of Analyzer objects.
-
     """
     # Prepares a list of Analyzer objects.
     analyzers = []
@@ -206,8 +198,9 @@ def get_analyzers(
 def run_search(
         *, sources: List[GitSource | GithubSampleSource],
         analyzers: List[Analyzer],
-        search_names: SearchNames
-) -> Dict[str, Union[str, Dict, List[Dict]]]:
+        search_names: SearchNames,
+        db_path: Path
+) -> Dict[str, str | Dict | List[Dict]]:
     """Uses generated sources and analyzers to perform a search
     operation.
 
@@ -216,17 +209,18 @@ def run_search(
         analyzers: The analyzers applied on the sources.
         search_names: A SearchNames instance to be populated with
             source, analyzer, and feature names.
+        db_path: Path to the database where the results from the search
+            are stored.
 
     Returns:
         A dictionary containing the following:
             * The repository features;
             * The code features;
             * The survey tree.
-
     """
     # Creates a CodeSurvey object and runs the search.
     survey = CodeSurvey(
-        db_filepath=sys.argv[1],
+        db_filepath=db_path,
         sources=sources,
         analyzers=analyzers,
         max_workers=3,

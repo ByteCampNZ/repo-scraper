@@ -3,7 +3,6 @@
     "info": {
         "title": "Repo Scraper API",
         "description": "Restful API for the `codesurvey` Python library.\nAllows clients to search git repositories for certain features and return a summary of the usage of the features within those repositories. For more about `codesurvey`, visit the [repository](https://github.com/when-of-python/codesurvey) on GitHub.",
-        "version": "0.1.0",
         "contact": {
             "email": "elliot@p-s.co.nz"
         },

@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "repo-scraper"
+version = "0.1.2"
+authors = [
+    {name = "Elliot Simpson", email = "elliot@p-s.co.nz"},
+]
+description = "Restful API for the codesurvey Python library."
+readme = "README.rst"
+requires-python = ">=3.7"
+keywords = ["repository", "scraper", "git"]
+license = {text = "GNU AGPL"}
+classifiers = [
+      'Intended Audience :: Developers',
+      'Programming Language :: Python :: 3',
+]
+dependencies = [
+    "codesurvey==0.1.3",
+    "flasgger==0.9.7.1",
+    "Flask==3.0.0",
+    "Flask_RESTful==0.3.10",
+    "shortuuid==1.0.11"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/ByteCampNZ/repo-scraper"
+
+[tool]
+
+[tool.setuptools]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+reposcraper = ["swagger/swagger_config.json"]

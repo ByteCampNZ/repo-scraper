@@ -1,7 +1,7 @@
 RepoScraper
 ============
 
-Write a REST API which uses the Python package ``codesurvey`` behind the
+A REST API which uses the Python package ``codesurvey`` behind the
 scenes to sample git repositories and return results about language
 features. Uses OpenAPI 3.0 for documentation.
 
